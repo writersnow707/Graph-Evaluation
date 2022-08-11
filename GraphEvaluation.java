@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -20,44 +19,26 @@ public class GraphEvaluation {
    private static final int INF = (int) 1e9;
 
    Scanner sc = null;
-   ArrayList<ArrayList<Integer>> graph = null;
-   // ArrayList<Integer>[] linkedVertex = new ArrayList[VERTEX];
-   ArrayList<Double>[] clusteringCoef = new ArrayList[VERTEX];
 
-   Vertex[] vertex = null;
    int[] d = null;
    int[] avgDiameter = null;
-   boolean[] isVisit = null;
-   boolean[] isPreserve = null;
 
    private int maxV = 0;
 
    public GraphEvaluation() {
-      graph = new ArrayList<ArrayList<Integer>>();
       sc = new Scanner(System.in);
-      Random random = new Random();
-      vertex = new Vertex[VERTEX];
-      
-      vertex[0] = new Vertex(0, 0);
-      clusteringCoef[0] = new ArrayList<Double>();
-      graph.add(new ArrayList<Integer>());
-      
-      for (int i = 1; i < VERTEX; i++) {
-         graph.add(new ArrayList<Integer>());
-         clusteringCoef[i] = new ArrayList<Double>();
-         vertex[i] = new Vertex(i, random.nextInt(100)+1); 
-      }
    }
 
    public void printMenu() {
       System.out.println("1. Display All Vertex Diameter Result");
       System.out.println("2. Display Clustering Coefficient Result");
-      System.out.println("3. Display Expansion alpha(¥á) Result");
+      System.out.println("3. Display Expansion alpha(Î±) Result");
       System.out.println("0. Program Exit");
       System.out.print("Choose Number >> ");
    }
 
-   private Graph<Vertex, DefaultEdge> createStringGraph(String filePath) throws Exception {
+   private Graph<Vertex, DefaultEdge> createStringGraph(String filePath, ArrayList<ArrayList<Integer>> graph,
+                                                Vertex[] vertex) throws Exception {
       Graph<Vertex, DefaultEdge> g = new SimpleGraph<>(DefaultEdge.class);
       BufferedReader br = new BufferedReader(new FileReader(filePath));
 
@@ -88,7 +69,7 @@ public class GraphEvaluation {
                g.addVertex(vertex[v2]);
             }
             if (g.containsEdge(vertex[v1], vertex[v2])) {
-            	System.out.println(v1 + " " + v2);
+               System.out.println(v1 + " " + v2);
             }
             if (!g.containsEdge(vertex[v1], vertex[v2])) {
                g.addEdge(vertex[v1], vertex[v2]);
@@ -113,12 +94,12 @@ public class GraphEvaluation {
          
       d = new int[maxV + 1];
       avgDiameter = new int[maxV + 1];
-
+      
       // add edges to create a circuit
       return g;
    }
 
-   private int diameter(int start) {
+   private int diameter(ArrayList<ArrayList<Integer>> g, int start) {
       Arrays.fill(d, INF);
 
       PriorityQueue<Vertex> pq = new PriorityQueue<>();
@@ -129,20 +110,20 @@ public class GraphEvaluation {
       while (!pq.isEmpty()) {
          Vertex node = pq.poll();
 
-         int dist = node.getCost(); // ÇöÀç ³ëµå±îÁöÀÇ ºñ¿ë
-         int now = node.getIdx(); // ÇöÀç ³ëµå ¹øÈ£
+         int dist = node.getCost(); // í˜„ì¬ ë…¸ë“œê¹Œì§€ì˜ ë¹„ìš©
+         int now = node.getIdx(); // í˜„ì¬ ë…¸ë“œ ë²ˆí˜¸
 
          if (d[now] < dist) {
             continue;
          }
 
-         for (int i = 0; i < graph.get(now).size(); i++) {
+         for (int i = 0; i < g.get(now).size(); i++) {
             // int cost = d[now] + graph.get(now).get(i).getCost();
             int cost = d[now] + 1;
 
-            if (cost < d[graph.get(now).get(i)]) {
-               d[graph.get(now).get(i)] = cost;
-               pq.offer(new Vertex(graph.get(now).get(i), cost));
+            if (cost < d[g.get(now).get(i)]) {
+               d[g.get(now).get(i)] = cost;
+               pq.offer(new Vertex(g.get(now).get(i), cost));
             }
          }
       }
@@ -153,8 +134,8 @@ public class GraphEvaluation {
       return d[d.length-2];
    }
 
-   /* 1¹ø ¸Ş´º : Diameter Standard deviation(¥ò) °á°ú°ª µµÃâ */
-   private void diameterStandardDeviation() {
+   /* 1ë²ˆ ë©”ë‰´ : Diameter Standard deviation(Ïƒ) ê²°ê³¼ê°’ ë„ì¶œ */
+   private void diameterStandardDeviation(ArrayList<ArrayList<Integer>> g, int[] avgDiameter) {
       double sum = 0.00;
       double avgSum = 0.00;
       double avgDeviation = 0.00;
@@ -162,7 +143,7 @@ public class GraphEvaluation {
       System.out.println("Now Loading...");
 
       for (int i = 1; i <= maxV; i++) {
-         avgDiameter[i] = diameter(i);
+         avgDiameter[i] = diameter(g, i);
          sum += (double) avgDiameter[i];
          // System.out.println(diameter(i));
          if ((maxV / 10) * idx < i) {
@@ -182,15 +163,16 @@ public class GraphEvaluation {
          //System.out.println((Math.pow(avgDiameter[j]-avgSum, 2)));
       }
 
-      avgDeviation /= avgSum; // V(X) = 1/n * ¢²(xi - m)^2
+      avgDeviation /= avgSum; // V(X) = 1/n * âˆ‘(xi - m)^2
 
-      /* ¥ò(X) = V(X)^1/2 */
-      System.out.println("Graph Diameter Standard Deviation(¥ò) : " + Math.sqrt(avgDeviation) + " ");
+      /* Ïƒ(X) = V(X)^1/2 */
+      System.out.println("Graph Diameter Standard Deviation(Ïƒ) : " + Math.sqrt(avgDeviation) + " ");
       System.out.println(); 
    }
 
-   /* 2¹ø ¸Ş´º : Clustering Coefficient °á°ú°ª µµÃâ */
-   private void clusteringCoefficient(Graph<Vertex, DefaultEdge> g) {
+   /* 2ë²ˆ ë©”ë‰´ : Clustering Coefficient ê²°ê³¼ê°’ ë„ì¶œ */
+   private void clusteringCoefficient(Graph<Vertex, DefaultEdge> g, ArrayList<ArrayList<Integer>> graph, 
+                                 ArrayList<Double>[] coef, Vertex[] vertex) {
       int maxVertex = 0;
       int degree = -1;
       double sum = 0;
@@ -213,7 +195,7 @@ public class GraphEvaluation {
          ei = 0;
 
          if (degree == 1) {
-            clusteringCoef[i].add(0.0);
+            coef[i].add(0.0);
          } else {
             for (int j = 0; j < edgesMax; j++) {
                for (int k = j + 1; k < edgesMax; k++) {
@@ -227,14 +209,14 @@ public class GraphEvaluation {
             }
          }
          if (edgesMax != 1) {
-            clusteringCoef[i].add((double) 2 * ei / (edgesMax * (edgesMax - 1)));
+            coef[i].add((double) 2 * ei / (edgesMax * (edgesMax - 1)));
             //if (clusteringCoef[i].get(0) > 0.0) {
             //   System.out.print("C" + i + " = " + clusteringCoef[i].get(0) + " ");
             //   System.out.println("(" + ei + " / " + (edgesMax * (edgesMax - 1)) / 2 + ")");
             //}
          }
 
-         sum += clusteringCoef[i].get(0);
+         sum += coef[i].get(0);
          // System.out.println();
       }
 
@@ -243,10 +225,11 @@ public class GraphEvaluation {
       System.out.println();
    }
 
-   /* 3-1. hop levelÀÇ vertex¸¦ ¸ğµÎ Ãâ·Â ÈÄ, ÇØ´ç hopÀ» ºÎºĞ ±×·¡ÇÁ·Î ¸¸µé±â À§ÇØ Á¦°ÅÇØ¾ß ÇÏ´Â edge count return
-    * Á¡¼ö(cost) ¹Ì±¸Çö(cost data°¡ Á¸ÀçÇÏÁö ¾Ê±â ¶§¹®¿¡ ÁÖ¼® Ã³¸®) */
-   public int printHop(int start) {
-      isVisit = new boolean[maxV + 1];
+   /* 3-1. hop levelì˜ vertexë¥¼ ëª¨ë‘ ì¶œë ¥ í›„, í•´ë‹¹ hopì„ ë¶€ë¶„ ê·¸ë˜í”„ë¡œ ë§Œë“¤ê¸° ìœ„í•´ ì œê±°í•´ì•¼ í•˜ëŠ” edge count return
+    * ì ìˆ˜(cost) ë¯¸êµ¬í˜„(cost dataê°€ ì¡´ì¬í•˜ì§€ ì•Šê¸° ë•Œë¬¸ì— ì£¼ì„ ì²˜ë¦¬) */
+   
+   public int printHop(ArrayList<ArrayList<Integer>> g, Vertex[] vertex, int start) {
+      boolean[] isVisit = new boolean[maxV + 1];
       int count = 0;
       int readCount = 0;
       int hopLevel = -1;
@@ -254,7 +237,6 @@ public class GraphEvaluation {
       Vertex v = null;
       int thisV = -1;
       int cost = 0;
-      // int costSum = vertex[start].getCost();
 
       Queue<Vertex> queue = new LinkedList<Vertex>();
       // System.out.print("Max Hop Level ? >> ");
@@ -265,8 +247,6 @@ public class GraphEvaluation {
       count = 1;
       
       int countNum = 0;
-      
-      // System.out.println("start cost v["+start+"] = "+costSum);
 
       for (int i = 1; i <= hopLevel; i++) {
          readCount = 0;
@@ -275,44 +255,37 @@ public class GraphEvaluation {
          // System.out.print("Hop Level " + i + " -> ");
          
          while (count != 0) {
-            // if (queue.isEmpty()) {
-            //    break;
-            // }
-        	// System.out.println(count);
             v = queue.poll();
-            for (int j = 0; j < graph.get(v.getIdx()).size(); j++) {
-               thisV = graph.get(v.getIdx()).get(j);
+            for (int j = 0; j < g.get(v.getIdx()).size(); j++) {
+               thisV = g.get(v.getIdx()).get(j);
                // cost = vertex[thisV].getCost();
                if (!isVisit[thisV]) {
                   // System.out.print(thisV + " ");
-                  //System.out.print(thisV + "[" + cost + "]" + " ");
                   queue.add(vertex[thisV]);
                   isVisit[thisV] = true;
 
                   readCount++;
-                  // costSum += cost;
-                  // System.out.println(costSum);
                }
             }
             count--;
          }
-         // System.out.println("---> total sum = "+costSum);
          System.out.println();
          count = readCount;
       }
 
-      while (!queue.isEmpty()) { // Á¦°ÅÇØ¾ß ÇÏ´Â EdgeÀÇ ¼ö¸¦ °è»ê
+      while (!queue.isEmpty()) { // ì œê±°í•´ì•¼ í•˜ëŠ” Edgeì˜ ìˆ˜ë¥¼ ê³„ì‚°
          v = queue.poll();
-         // (Max Hop Level-1) °ú ÀÌ¾îÁ® ÀÖÁö ¾ÊÀº Edge¸¦ ¸ğµÎ Remove
-         countRemoveEdge += graph.get(v.getIdx()).size() - 1;
+         // (Max Hop Level-1) ê³¼ ì´ì–´ì ¸ ìˆì§€ ì•Šì€ Edgeë¥¼ ëª¨ë‘ Remove
+         countRemoveEdge += g.get(v.getIdx()).size() - 1;
       }
 
       // System.out.println("Hop Vertex Cost Sum >> " + costSum);
       return countRemoveEdge;
    }
+
       
-   public void printHopLevel(int start, int goal) {
-      isVisit = new boolean[maxV+1];
+   public void printHopLevel(ArrayList<ArrayList<Integer>> g, Vertex[] vertex, int start, int goal) {
+      boolean[] isVisit = new boolean[maxV+1];
       int[] distance = new int[maxV+1];
       int i;
       int count = 0;
@@ -341,8 +314,8 @@ public class GraphEvaluation {
          
          while (count != 0) {
             v = queue.poll();
-            for (int j = 0; j < graph.get(v.getIdx()).size(); j++) {
-               thisV = graph.get(v.getIdx()).get(j);
+            for (int j = 0; j < g.get(v.getIdx()).size(); j++) {
+               thisV = g.get(v.getIdx()).get(j);
                if (!isVisit[thisV]) {
                   System.out.print(thisV + " ");
                   queue.add(vertex[thisV]);
@@ -381,23 +354,23 @@ public class GraphEvaluation {
       }
       if (k == -1) {
          stack.clear();
-         System.out.println("goal hopÀÌ Á¸ÀçÇÏÁö ¾Ê½À´Ï´Ù.");
+         System.out.println("goal hopì´ ì¡´ì¬í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.");
       } else {
          stack.push(k);
          
-         // start¿¡¼­ goal±îÁöÀÇ ÃÖ´Ü °æ·Î Ãâ·Â
+         // startì—ì„œ goalê¹Œì§€ì˜ ìµœë‹¨ ê²½ë¡œ ì¶œë ¥
          thisV = stack.pop();
          System.out.print(thisV + "->");
-         cutCount += graph.get(thisV).size()-1;
+         cutCount += g.get(thisV).size()-1;
          
          while (!stack.empty()) {
             thisV = stack.pop();
             System.out.print(thisV);
             if (stack.size() != 0) {
-               cutCount += graph.get(thisV).size()-2;
+               cutCount += g.get(thisV).size()-2;
                System.out.print("->");
             } else {
-               cutCount += graph.get(thisV).size()-1;
+               cutCount += g.get(thisV).size()-1;
             }
          }
          
@@ -406,14 +379,13 @@ public class GraphEvaluation {
       }
    }
    
-   /* 3¹ø ¸Ş´º : Expansion alpha(¥á) µµÃâ */
-   public void printEdgeCount(Graph<Vertex, DefaultEdge> g) {
-      ArrayList<ArrayList<Integer>> graph = new ArrayList<ArrayList<Integer>>();
+   /* 3ë²ˆ ë©”ë‰´ : Expansion alpha(Î±) ë„ì¶œ */
+   public void printEdgeCount(Graph<Vertex, DefaultEdge> g, ArrayList<ArrayList<Integer>> graph, Vertex[] vertex) {
       int n = -1;
       int startVertex = -1;
       int goalVertex = -1;
 
-      // ¼öÁ¤Áß
+      // ìˆ˜ì •ì¤‘
       System.out.println("1. hop level result");
       System.out.println("2. vertex -> what's hop level");
       System.out.println("3. detail Graph -> edgeCut");
@@ -424,7 +396,7 @@ public class GraphEvaluation {
          case 1 : {
             System.out.print("Vertex ? >> ");
             startVertex = sc.nextInt();
-            System.out.println("Remove Edge Count >> " + printHop(startVertex));
+            System.out.println("Remove Edge Count >> " + printHop(graph, vertex, startVertex));
             break;
          }
          case 2 : {
@@ -432,7 +404,7 @@ public class GraphEvaluation {
             startVertex = sc.nextInt();
             System.out.print("Goal Vertex >> ");
             goalVertex = sc.nextInt();
-            printHopLevel(startVertex, goalVertex);
+            printHopLevel(graph, vertex, startVertex, goalVertex);
             break;
          }
          /*
@@ -444,8 +416,8 @@ public class GraphEvaluation {
       }
    }
 
-   // ÀÓ½Ã ¸Ş¼­µå - bfs (±×·¡ÇÁÀÇ ¿¬°á À¯¹« Ã¼Å©)
-   public void bfs() {
+   // ì„ì‹œ ë©”ì„œë“œ - bfs (ê·¸ë˜í”„ì˜ ì—°ê²° ìœ ë¬´ ì²´í¬)
+   public void bfs(ArrayList<ArrayList<Integer>> g) {
       boolean[] isVisited = new boolean[maxV + 1];
       int start = 1;
       Queue<Integer> queue = new LinkedList<Integer>();
@@ -461,8 +433,8 @@ public class GraphEvaluation {
          while (!queue.isEmpty()) {
             int v = queue.poll();
 
-            for (int i = 0; i < graph.get(v).size(); i++) {
-               int thisV = graph.get(v).get(i);
+            for (int i = 0; i < g.get(v).size(); i++) {
+               int thisV = g.get(v).get(i);
                if (!isVisited[thisV]) {
                   queue.add(thisV);
                   // System.out.print(thisV + " ");
@@ -488,19 +460,18 @@ public class GraphEvaluation {
 
    private void mainProject() throws Exception {
       File f = null;
-      // String graphType = null;
-      // String dataCount = null;
-      // String pairCount = null;
+      ArrayList<ArrayList<Integer>> graph = new ArrayList<ArrayList<Integer>>();
+      ArrayList<Double>[] clusteringCoef = new ArrayList[VERTEX];
+      Vertex[] vertex = new Vertex[VERTEX];
+      
       boolean isFileCheck = false;
 
-      // while (!isFileCheck) {
-      // System.out.print("Graph Type ? >> ");
-      // graphType = sc.nextLine();
-      // System.out.print("Data Count ? >> ");
-      // dataCount = sc.nextLine();
-      // System.out.print("Pair Count ? >> ");
-      // pairCount = sc.nextLine();
-
+      for (int i = 0; i < VERTEX; i++) {
+         graph.add(new ArrayList<Integer>());
+         clusteringCoef[i] = new ArrayList<Double>();
+         vertex[i] = new Vertex(i, 0);
+      }
+      
       int data = -1;
       int pairA = -1;
       int pairB = -1;
@@ -514,7 +485,7 @@ public class GraphEvaluation {
          
          for (int i = pairA; i <= pairB; i++) {
             //for (int j = 1; j <= 10; j++) {
-               String filePath = "C:\\Users\\½º³ë¿ì707\\Desktop\\InfoLAB\\randomSetTest\\chainRandomSet_" + data + "_" + i + ".txt"; //" (" + j + ").txt";
+               String filePath = "C:\\Users\\ìŠ¤ë…¸ìš°707\\Desktop\\InfoLAB\\randomSetTest\\randomSet_" + data + "_" + i + ".txt"; //" (" + j + ").txt";
                f = new File(filePath);
                // f = new File(filePath + "\\" + graphType + "\\" + graphType + "_" + dataCount
                // + "_" + pairCount + ".txt");
@@ -523,17 +494,17 @@ public class GraphEvaluation {
                   // pairCount + ".txt";
                   isFileCheck = true;
 
-                  Graph<Vertex, DefaultEdge> g = createStringGraph(filePath);
+                  Graph<Vertex, DefaultEdge> g = createStringGraph(filePath, graph, vertex);
                   // int num = -1;
 
-                  bfs();
+                  bfs(graph);
 
                   System.out.println(filePath);
                   // Random random = new Random();
-                  // clusteringCoefficient(g);
+                  diameterStandardDeviation(graph, avgDiameter);
+                  clusteringCoefficient(g, graph, clusteringCoef, vertex);
                   
-                  printHop(1);
-                  diameterStandardDeviation();
+                  printHop(graph, vertex, 1);
                } else {
                   System.out.println("File is not exist. Please try again");
                   System.out.println();
