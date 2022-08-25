@@ -1,540 +1,489 @@
+/*
+ * Class Name : GraphEvaluation.java
+ * 
+ * Version Info : -
+ * 
+ * Date : 2022-08-17
+ * 
+ * Copyright : writersnow707
+ */
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.InputMismatchException;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Random;
 import java.util.Scanner;
-import java.util.Stack;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
 public class GraphEvaluation {
-   private static final int VERTEX = 1000001;
-   private static final int INF = (int) 1e9;
+	private static final int INF = (int) 1e9;
 
-   Scanner sc = null;
+	Scanner sc = null;
 
-   int[] d = null;
-   int[] avgDiameter = null;
+	public GraphEvaluation() {
+		sc = new Scanner(System.in);
+	}
 
-   private int maxV = 0;
+	private int numberException() {
+		int num = -1;
 
-   public GraphEvaluation() {
-      sc = new Scanner(System.in);
-   }
+		try {
+			num = sc.nextInt();
+		} catch (InputMismatchException e) {
+			System.out.println("ERROR");
+			sc.next();
+			return -1;
+		}
+		return num;
+	}
+	
+	public void printMenu() {
+		System.out.println("1. Display All Vertex Diameter Result");
+		System.out.println("2. Display Clustering Coefficient Result");
+		System.out.println("3. Display Expansion alpha(α) Result");
+		System.out.println("0. Program Exit");
+		System.out.print("Choose Number >> ");
+	}
 
-   public void printMenu() {
-      System.out.println("1. Display All Vertex Diameter Result");
-      System.out.println("2. Display Clustering Coefficient Result");
-      System.out.println("3. Display Expansion alpha(α) Result");
-      System.out.println("0. Program Exit");
-      System.out.print("Choose Number >> ");
-   }
+	/* 그래프의 타입을 선택 후, 해당 타입 경로를 반환 */
+	private String printGraphTypeMenu() {
+		int n = -1;
+		while (n == -1) {
+			System.out.println("1. Random Graph");
+			System.out.println("2. Chain Random Graph");
+			System.out.println("3. Ring Random Graph");
+			System.out.print("Select >> ");
+			
+			n = numberException();
+		}
+		switch (n) {
+		case 1: {
+			return "randomSet\\randomSet_";
+		}
+		case 2: {
+			return "chainRandomSet\\chainRandomSet_";
+		}
+		case 3: {
+			return "ringRandomSet\\ringRandomSet_";
+		}
+		default: {
+			System.out.println("System Error");
+			return null;		// 잘못된 번호를 선택
+		}
+		}
+	}
 
-   private Graph<Vertex, DefaultEdge> createStringGraph(String filePath, ArrayList<ArrayList<Integer>> graph,
-                                                Vertex[] vertex) throws Exception {
-      Graph<Vertex, DefaultEdge> g = new SimpleGraph<>(DefaultEdge.class);
-      BufferedReader br = new BufferedReader(new FileReader(filePath));
+	/* 그래프 생성 (그래프의 생성만을 목적으로 함) */
+	private Graph<Integer, DefaultEdge> createGraph(String filePath) throws Exception {
+		Graph<Integer, DefaultEdge> g = new SimpleGraph<>(DefaultEdge.class);
+		BufferedReader br = new BufferedReader(new FileReader(filePath));
 
-      boolean[] isUsed = new boolean[VERTEX];
-      String[] V = null;
-      String s = null;
-      int v1 = -1;
-      int v2 = -1;
+		String s = null;
+		int v1 = -1;
+		int v2 = -1;
+		int idx = 1;
 
-      System.out.println("Now Loading...");
-      System.out.println();
+		System.out.println("Now Loading...");
+		System.out.println();
 
-      br.readLine();
-      try {
-         while (true) {
-            s = br.readLine();
-            V = s.split(", ");
+		br.readLine();
+		try {
+			while (true) {
+				s = br.readLine();
 
-            v1 = Integer.parseInt(V[1]);
-            v2 = Integer.parseInt(V[2]);
-            
-            if (!isUsed[v1]) {
-               isUsed[v1] = true;
-               g.addVertex(vertex[v1]);
-            }
-            if (!isUsed[v2]) {
-               isUsed[v2] = true;
-               g.addVertex(vertex[v2]);
-            }
-            if (g.containsEdge(vertex[v1], vertex[v2])) {
-               System.out.println(v1 + " " + v2);
-            }
-            if (!g.containsEdge(vertex[v1], vertex[v2])) {
-               g.addEdge(vertex[v1], vertex[v2]);
-               graph.get(v1).add(v2);
-               graph.get(v2).add(v1);
-            }
-            if (maxV < v1) {
-               maxV = v1;
-            }
-            if (maxV < v2) {
-               maxV = v2;
-            }
-         }
-      } catch (Exception e) { // EOF(End of File)
-         System.out.println("Graph Mapping Complete.");
-         System.out.println();
-      }
+				v1 = Integer.parseInt(s.split(", ")[1]);
+				v2 = Integer.parseInt(s.split(", ")[2]);		// File의 Vertex Number를 Integer로 변환
 
-      if (br != null) {
-         br.close();
-      }
-         
-      d = new int[maxV + 1];
-      avgDiameter = new int[maxV + 1];
-      
-      // add edges to create a circuit
-      return g;
-   }
+				if (!g.containsVertex(v1)) {
+					g.addVertex(v1);
+				}
+				if (!g.containsVertex(v2)) {
+					g.addVertex(v2);
+				}
+				if (g.containsEdge(v1, v2)) {		// 기존에 연결되어 있는 경로가 또 나올 경우, File index와 해당 Vertex들을 출력
+					System.out.println("***OVERLAP LINE " + idx + "***");
+					System.out.println("EDGE : (" + v1 + ", " + v2 + ")");
+				}
+				if (!g.containsEdge(v1, v2)) {
+					g.addEdge(v1, v2);
+				}
 
-   private int diameter(ArrayList<ArrayList<Integer>> g, int start) {
-      Arrays.fill(d, INF);
+				idx++;
+			}
+		} catch (NullPointerException e) {
+			System.out.println("Graph Mapping Complete.");
+			System.out.println();
+		} finally {
+			br.close();
+		}
 
-      PriorityQueue<Vertex> pq = new PriorityQueue<>();
+		// add edges to create a circuit
+		return g;
+	}
 
-      pq.offer(new Vertex(start, 0));
-      d[start] = 0;
+	// 임시 메서드 - bfs (그래프의 연결 유무 체크)
+	public void bfs(ArrayList<ArrayList<Integer>> g) {
+		Queue<Integer> queue = new LinkedList<Integer>();
+		boolean[] isVisited = new boolean[g.size()];
+		int start = g.get(1).get(0);
+		int count = 0;
+		int graphCount = 0;
 
-      while (!pq.isEmpty()) {
-         Vertex node = pq.poll();
+		while (count != g.size() - 1) {
+			queue.add(start);
+			isVisited[start] = true;
+			// System.out.print(start + " ");
+			count++;
 
-         int dist = node.getCost(); // 현재 노드까지의 비용
-         int now = node.getIdx(); // 현재 노드 번호
+			while (!queue.isEmpty()) {
+				int v = queue.poll();
 
-         if (d[now] < dist) {
-            continue;
-         }
+				for (int i = 0; i < g.get(v).size(); i++) {
+					int thisV = g.get(v).get(i);
+					if (!isVisited[thisV]) {
+						queue.add(thisV);
+						// System.out.print(thisV + " ");
+						isVisited[thisV] = true;
+						count++;
+					}
+				}
+			}
 
-         for (int i = 0; i < g.get(now).size(); i++) {
-            // int cost = d[now] + graph.get(now).get(i).getCost();
-            int cost = d[now] + 1;
+			graphCount++;
+			System.out.print(" <" + count + "> ");
+			System.out.println(" [" + graphCount + "] ");
 
-            if (cost < d[g.get(now).get(i)]) {
-               d[g.get(now).get(i)] = cost;
-               pq.offer(new Vertex(g.get(now).get(i), cost));
-            }
-         }
-      }
+			for (int i = 1; i < g.size(); i++) {
+				if (isVisited[i] == false) {
+					start = i;
+					break;
+				}
+			}
+		}
+	}
+	
+	private int diameter(ArrayList<ArrayList<Integer>> g, int start) {
+		int[] d = new int[g.size()];
+		Arrays.fill(d, INF);
 
-      Arrays.sort(d);
+		PriorityQueue<Vertex> pq = new PriorityQueue<>();
+		pq.offer(new Vertex(start, 0));
+		
+		d[start] = 0;
+		int count = 0;
+		
+		while (!pq.isEmpty()) {
+			Vertex next = pq.poll();
 
-      // System.out.println(d[d.length-2]);
-      return d[d.length-2];
-   }
+			int dist = next.getCost(); // 현재 노드까지의 비용
+			int now = next.getIdx(); // 현재 노드 번호
 
-   /* 1번 메뉴 : Diameter Standard deviation(σ) 결과값 도출 */
-   private void diameterStandardDeviation(ArrayList<ArrayList<Integer>> g, int[] avgDiameter) {
-      double sum = 0.00;
-      double avgSum = 0.00;
-      double avgDeviation = 0.00;
-      int idx = 1;
-      System.out.println("Now Loading...");
+			if (d[now] < dist) {
+				continue;
+			}
 
-      for (int i = 1; i <= maxV; i++) {
-         avgDiameter[i] = diameter(g, i);
-         sum += (double) avgDiameter[i];
-         // System.out.println(diameter(i));
-         if ((maxV / 10) * idx < i) {
-            //System.out.println("Now Loading..." + idx * 10 + "%");
-            idx++;
-         }
-      }
+			for (int i = 0; i < g.get(now).size(); i++) {
+				// int cost = d[now] + graph.get(now).get(i).getCost();
+				int cost = d[now] + 1;
 
-      System.out.println("**Diameter resolved***");
-      System.out.println("Now Loading...");
+				if (cost < d[g.get(now).get(i)]) {
+					d[g.get(now).get(i)] = cost;
+					pq.offer(new Vertex(g.get(now).get(i), cost));
+				}
+			}
+		}
 
-      avgSum = sum / maxV;
+		Arrays.sort(d);
+		
+		return (d[d.length-2] != INF) ? (d[d.length-2]) : 0;
+	}
+	
+	// 1번 메뉴 : Diameter Standard Deviation 결과값 도출
+	private void diameterStandardDeviation(ArrayList<ArrayList<Integer>> g) {
+		int[] avgDiameter = new int[g.size()];
+		double sum = 0.00;
+		double avgSum = 0.00;
+		double avgDeviation = 0.00;
+		int idx = 1;
+		System.out.println("Now Loading...");
 
-      for (int j = 1; j <= maxV; j++) {
-         avgDeviation += Math.pow(avgDiameter[j] - avgSum, 2);
-         //System.out.println(j + " " + (avgDiameter[j]-avgSum));
-         //System.out.println((Math.pow(avgDiameter[j]-avgSum, 2)));
-      }
+		for (int i = 1; i <= g.size()-1; i++) {
+			avgDiameter[i] = diameter(g, i);
+			sum += (double) avgDiameter[i];
+			// System.out.println(diameter(g, i));
+		}
 
-      avgDeviation /= avgSum; // V(X) = 1/n * ∑(xi - m)^2
+		System.out.println("**Diameter resolved***");
+		System.out.println("Now Loading...");
 
-      /* σ(X) = V(X)^1/2 */
-      System.out.println("Graph Diameter Standard Deviation(σ) : " + Math.sqrt(avgDeviation) + " ");
-      System.out.println(); 
-   }
-
-   /* 2번 메뉴 : Clustering Coefficient 결과값 도출 */
-   private void clusteringCoefficient(Graph<Vertex, DefaultEdge> g, ArrayList<ArrayList<Integer>> graph, 
-                                 ArrayList<Double>[] coef, Vertex[] vertex) {
-      int maxVertex = 0;
-      int degree = -1;
-      double sum = 0;
-      int v1 = -1;
-      int v2 = -1;
-      int edgesMax = -1;
-      int ei = -1;
-
-      boolean isFound = true;
-      while (isFound) {
-         ++maxVertex;
-         isFound = g.containsVertex(vertex[maxVertex]);
-         // System.out.println(maxVertex + " : " + isFound);
-      }
-
-      System.out.println("***Clustering Coefficent***");
-      for (int i = 1; i < maxVertex; i++) {
-         degree = g.degreeOf(vertex[i]);
-         edgesMax = graph.get(i).size();
-         ei = 0;
-
-         if (degree == 1) {
-            coef[i].add(0.0);
-         } else {
-            for (int j = 0; j < edgesMax; j++) {
-               for (int k = j + 1; k < edgesMax; k++) {
-                  v1 = graph.get(i).get(j);
-                  v2 = graph.get(i).get(k);
-
-                  if (g.containsEdge(vertex[v1], vertex[v2])) {
-                     ei++;
-                  }
-               }
-            }
-         }
-         if (edgesMax != 1) {
-            coef[i].add((double) 2 * ei / (edgesMax * (edgesMax - 1)));
-            //if (clusteringCoef[i].get(0) > 0.0) {
-            //   System.out.print("C" + i + " = " + clusteringCoef[i].get(0) + " ");
-            //   System.out.println("(" + ei + " / " + (edgesMax * (edgesMax - 1)) / 2 + ")");
-            //}
-         }
-
-         sum += coef[i].get(0);
-         // System.out.println();
-      }
-
-      System.out.print("AVERAGE : " + sum / (maxVertex - 1) + " ");
-      System.out.println("(" + sum + " / " + (maxVertex - 1) + ")");
-      System.out.println();
-   }
-
-   /* 3-1. hop level의 vertex를 모두 출력 후, 해당 hop을 부분 그래프로 만들기 위해 제거해야 하는 edge count return
-    * 점수(cost) 미구현(cost data가 존재하지 않기 때문에 주석 처리) */
-   
-   public int printHop(ArrayList<ArrayList<Integer>> g, Vertex[] vertex, int start) {
-      boolean[] isVisit = new boolean[maxV + 1];
-      int count = 0;
-      int readCount = 0;
-      int hopLevel = -1;
-      int countRemoveEdge = 0;
-      Vertex v = null;
-      int thisV = -1;
-      int cost = 0;
-
-      Queue<Vertex> queue = new LinkedList<Vertex>();
-      // System.out.print("Max Hop Level ? >> ");
-      hopLevel = 6; // sc.nextInt();
-      
-      queue.add(vertex[start]);
-      isVisit[start] = true;
-      count = 1;
-      
-      int countNum = 0;
-
-      for (int i = 1; i <= hopLevel; i++) {
-         readCount = 0;
-         countNum += count;
-         System.out.print(countNum);
-         // System.out.print("Hop Level " + i + " -> ");
-         
-         while (count != 0) {
-            v = queue.poll();
-            for (int j = 0; j < g.get(v.getIdx()).size(); j++) {
-               thisV = g.get(v.getIdx()).get(j);
-               // cost = vertex[thisV].getCost();
-               if (!isVisit[thisV]) {
-                  // System.out.print(thisV + " ");
-                  queue.add(vertex[thisV]);
-                  isVisit[thisV] = true;
-
-                  readCount++;
-               }
-            }
-            count--;
-         }
-         System.out.println();
-         count = readCount;
-      }
-
-      while (!queue.isEmpty()) { // 제거해야 하는 Edge의 수를 계산
-         v = queue.poll();
-         // (Max Hop Level-1) 과 이어져 있지 않은 Edge를 모두 Remove
-         countRemoveEdge += g.get(v.getIdx()).size() - 1;
-      }
-
-      // System.out.println("Hop Vertex Cost Sum >> " + costSum);
-      return countRemoveEdge;
-   }
-
-      
-   public void printHopLevel(ArrayList<ArrayList<Integer>> g, Vertex[] vertex, int start, int goal) {
-      boolean[] isVisit = new boolean[maxV+1];
-      int[] distance = new int[maxV+1];
-      int i;
-      int count = 0;
-      int readCount = 0;
-      int cutCount = 0;
-      Vertex v = null;
-      int thisV = -1;
-      int foundHopLevel = -1;
-      boolean isFound = false;
-
-      Queue<Vertex> queue = new LinkedList<Vertex>();
-      
-      for (i = 0; i <= maxV; i++) {
-         distance[i] = -1;
-      }
-      
-      queue.add(vertex[start]);
-      isVisit[start] = true;
-      count = 1;
-      distance[start] = 0;
-
-      i = 1;
-      while (!queue.isEmpty()) {
-         readCount = 0;
-         System.out.print("Hop Level " + i + " -> ");         
-         
-         while (count != 0) {
-            v = queue.poll();
-            for (int j = 0; j < g.get(v.getIdx()).size(); j++) {
-               thisV = g.get(v.getIdx()).get(j);
-               if (!isVisit[thisV]) {
-                  System.out.print(thisV + " ");
-                  queue.add(vertex[thisV]);
-                  isVisit[thisV] = true;
-
-                  readCount++;
-               }
-               if (thisV == goal) {
-                  foundHopLevel = i;
-                  isFound = true;
-                  // break;
-               }
-               if (distance[thisV] == -1) {
-                  distance[thisV] = v.getIdx();
-               }
-            }
-            count--;
-         }
-         System.out.println();
-         if (isFound) {
-            break;
-         }
-         count = readCount;
-         i++;
-      }
-      
-      int k = goal;
-      Stack<Integer> stack = new Stack<Integer>();
-      
-      while (k != start) {
-         if (k == -1) {
-            break;
-         }
-         stack.push(k);
-         k = distance[k];
-      }
-      if (k == -1) {
-         stack.clear();
-         System.out.println("goal hop이 존재하지 않습니다.");
-      } else {
-         stack.push(k);
-         
-         // start에서 goal까지의 최단 경로 출력
-         thisV = stack.pop();
-         System.out.print(thisV + "->");
-         cutCount += g.get(thisV).size()-1;
-         
-         while (!stack.empty()) {
-            thisV = stack.pop();
-            System.out.print(thisV);
-            if (stack.size() != 0) {
-               cutCount += g.get(thisV).size()-2;
-               System.out.print("->");
-            } else {
-               cutCount += g.get(thisV).size()-1;
-            }
-         }
-         
-         System.out.println("Goal Vertex By Hop Level >> " + foundHopLevel);
-         System.out.println("Remove Linked Edge >> " + cutCount);
-      }
-   }
-   
-   /* 3번 메뉴 : Expansion alpha(α) 도출 */
-   public void printEdgeCount(Graph<Vertex, DefaultEdge> g, ArrayList<ArrayList<Integer>> graph, Vertex[] vertex) {
-      int n = -1;
-      int startVertex = -1;
-      int goalVertex = -1;
-
-      // 수정중
-      System.out.println("1. hop level result");
-      System.out.println("2. vertex -> what's hop level");
-      System.out.println("3. detail Graph -> edgeCut");
-      System.out.print("Choose Number >> ");
-      n = sc.nextInt();
-      
-      switch (n) {
-         case 1 : {
-            System.out.print("Vertex ? >> ");
-            startVertex = sc.nextInt();
-            System.out.println("Remove Edge Count >> " + printHop(graph, vertex, startVertex));
-            break;
-         }
-         case 2 : {
-            System.out.print("Start Vertex >> ");
-            startVertex = sc.nextInt();
-            System.out.print("Goal Vertex >> ");
-            goalVertex = sc.nextInt();
-            printHopLevel(graph, vertex, startVertex, goalVertex);
-            break;
-         }
-         /*
-         case 3 : {
-            graph = hopGraph();
-            cutEdgeCount(g, graph);
-         }
-         */
-      }
-   }
-
-   // 임시 메서드 - bfs (그래프의 연결 유무 체크)
-   public void bfs(ArrayList<ArrayList<Integer>> g) {
-      boolean[] isVisited = new boolean[maxV + 1];
-      int start = 1;
-      Queue<Integer> queue = new LinkedList<Integer>();
-      int count = 0;
-      int graphCount = 0;
-      
-      while (count != maxV) {
-         queue.add(start);
-         isVisited[start] = true;
-         // System.out.print(start + " ");
-         count++;
-
-         while (!queue.isEmpty()) {
-            int v = queue.poll();
-
-            for (int i = 0; i < g.get(v).size(); i++) {
-               int thisV = g.get(v).get(i);
-               if (!isVisited[thisV]) {
-                  queue.add(thisV);
-                  // System.out.print(thisV + " ");
-                  isVisited[thisV] = true;
-                  count++;
-               }
-            }
-         }
-         
-         graphCount++;
-         System.out.print(" <"+count+"> ");
-         System.out.println(" ["+graphCount+"] ");
-
-         for (int i = 1; i <= maxV; i++) {
-            if (isVisited[i] == false) {
-               start = i;
-               break;
-            }
-         }
-      }
-
-   }
-
-   private void mainProject() throws Exception {
-      File f = null;
-      ArrayList<ArrayList<Integer>> graph = new ArrayList<ArrayList<Integer>>();
-      ArrayList<Double>[] clusteringCoef = new ArrayList[VERTEX];
-      Vertex[] vertex = new Vertex[VERTEX];
-      
-      boolean isFileCheck = false;
-
-      for (int i = 0; i < VERTEX; i++) {
-         graph.add(new ArrayList<Integer>());
-         clusteringCoef[i] = new ArrayList<Double>();
-         vertex[i] = new Vertex(i, 0);
-      }
-      
-      int data = -1;
-      int pairA = -1;
-      int pairB = -1;
-      
-      while (true) {
-         System.out.print("Data? >> ");
-         data = sc.nextInt();
-         System.out.print("Pair Data Range >> ");
-         pairA = sc.nextInt();
-         pairB = sc.nextInt();
-         
-         for (int i = pairA; i <= pairB; i++) {
-            //for (int j = 1; j <= 10; j++) {
-               String filePath = "C:\\Users\\스노우707\\Desktop\\InfoLAB\\randomSetTest\\randomSet_" + data + "_" + i + ".txt"; //" (" + j + ").txt";
-               f = new File(filePath);
-               // f = new File(filePath + "\\" + graphType + "\\" + graphType + "_" + dataCount
-               // + "_" + pairCount + ".txt");
-               if (f.exists()) {
-                  // filePath += "\\" + graphType + "\\" + graphType + "_" + dataCount + "_" +
-                  // pairCount + ".txt";
-                  isFileCheck = true;
-
-                  Graph<Vertex, DefaultEdge> g = createStringGraph(filePath, graph, vertex);
-                  // int num = -1;
-
-                  bfs(graph);
-
-                  System.out.println(filePath);
-                  // Random random = new Random();
-                  diameterStandardDeviation(graph, avgDiameter);
-                  clusteringCoefficient(g, graph, clusteringCoef, vertex);
-                  
-                  printHop(graph, vertex, 1);
-               } else {
-                  System.out.println("File is not exist. Please try again");
-                  System.out.println();
-               }
-
-               graph.clear();
-               graph = new ArrayList<ArrayList<Integer>>();
-               for (int k = 0; k < VERTEX; k++) {
-                  graph.add(new ArrayList<Integer>());
-               }
-               for (int k = 0; k < VERTEX; k++) {
-                  clusteringCoef[k].clear();
-               }
-               clusteringCoef = new ArrayList[VERTEX];
-               for (int k = 0; k < VERTEX; k++) {
-                  clusteringCoef[k] = new ArrayList<Double>();
-               }
-               maxV = 0;
-            }
-         // }
-         System.out.println("System Quit...");
-      }
+		avgSum = sum / (g.size()-1);
 
 
-      // System.out.println(g.vertexSet());
-      // System.out.println("System Quit...");
-   }
+		for (int i = 1; i <= g.size()-1; i++) {
+			avgDeviation += Math.pow(avgDiameter[i] - avgSum, 2);
+		}
+		
+		avgDeviation /= avgSum; // V(X) = 1/n * ∑(xi - m)^2
 
-   public static void main(String[] args) throws Exception {
-      GraphEvaluation ge = new GraphEvaluation();
-      ge.mainProject();
-   }
+		/* σ(X) = V(X)^1/2 */
+		System.out.println("Graph Diameter Standard Deviation(σ) : " + Math.sqrt(avgDeviation) + " ");
+		System.out.println();
+	}
+	
+	/* 2번 메뉴 : Clustering Coefficient 결과값 도출 */
+	private void clusteringCoefficient(Graph<Integer, DefaultEdge> graph, ArrayList<ArrayList<Integer>> g) {
+		double[] clusteringCoef = new double[g.size()];
+		int degree = -1;
+		double sum = 0.0;
+		int v1 = -1;
+		int v2 = -1;
+		int ei = -1;
+
+		System.out.println("***Clustering Coefficent***");
+		for (int i = 1; i <= g.size()-1; i++) {
+			degree = g.get(i).size();
+			ei = 0;
+
+			if (degree == 1) {
+				clusteringCoef[i] = 0.0;
+			} else {
+				for (int j = 0; j < degree; j++) {
+					for (int k = j+1; k < degree; k++) {
+						v1 = g.get(i).get(j);
+						v2 = g.get(i).get(k);
+
+						if (graph.containsEdge(v1, v2)) {
+							ei++;
+						}
+					}
+				}
+				clusteringCoef[i] = (double)(2*ei / (degree*(degree-1)));
+			}
+		}
+
+		System.out.print("AVERAGE : " + sum / (g.size()-1) + " ");
+		System.out.println("(" + sum + " / " + (g.size()-1) + ")");
+		System.out.println();
+	}
+	
+	public int edgeCut(ArrayList<ArrayList <Integer>> g, int start, int level) {
+		boolean[] isVisit = new boolean[g.size()];
+		int i, j, k;
+		int count = 0;
+		int readCount = 0;
+		int edgeCutCount = 0;
+		int allEdges = -1;
+		int cutEdges = -1;
+		int v = -1;
+		int thisV = -1;
+		boolean isFound = false;
+
+		ArrayList<ArrayList<Integer>> lists = new ArrayList<ArrayList<Integer>>();
+
+		for (i = 0; i <= g.size()-1; i++) {
+			lists.add(new ArrayList<Integer>());
+		}
+
+		Queue<Integer> queue = new LinkedList<Integer>();
+
+		queue.add(start);
+		isVisit[start] = true;
+		count = 1;
+
+		i = 1;
+		while (i <= level) {
+			readCount = 0;
+
+			while (count != 0) {
+				v = queue.poll();
+				for (j = 0; j < g.get(v).size(); j++) {
+					thisV = g.get(v).get(j);
+					if (!isVisit[thisV]) {
+						lists.get(v).add(thisV);
+						lists.get(thisV).add(v);
+						queue.add(thisV);
+						isVisit[thisV] = true;
+
+						readCount++;
+					}
+				}
+				count--;
+			}
+			if (i == level) {
+				break;
+			}
+			count = readCount;
+			i++;
+		}
+
+		for (j = 1; j <= g.size()-1; j++) {
+			if (lists.get(j).size() > 0 && j != start) {
+				lists.get(j).clear();
+				lists.get(j).add(0);
+			} else {
+				lists.get(j).add(-1);
+			}
+		}
+
+		while (!queue.isEmpty()) {
+			v = queue.poll();
+			for (j = 0; j < g.get(v).size(); j++) {
+				thisV = g.get(v).get(j);
+				if (lists.get(thisV).get(0) == 0) {
+					isFound = false;
+					for (k = 0; k < lists.get(thisV).size(); k++) {
+						if (lists.get(thisV).get(k) == v) {
+							isFound = true;
+							break;
+						}
+					}
+					if (!isFound) {
+						lists.get(thisV).add(v);
+					}
+				}
+			}
+			allEdges = g.get(v).size();
+			cutEdges = lists.get(v).size();
+			edgeCutCount += (allEdges - cutEdges);
+		}
+		
+		System.out.println();
+		lists.clear();
+		return edgeCutCount;
+	}
+
+	/* hop의 level 만큼 노드를 부분 그래프로 분리하기 위해 제거해야 하는 Edge Count 반환*/
+	public void printEdgeCount(ArrayList<ArrayList <Integer>> g) {
+		int cutCount = 0;
+		int level = 2;
+		
+		for (int j = 1; j <= g.size()-1; j++) {
+			cutCount += edgeCut(g, j, level);
+		}
+		System.out.println((double) cutCount / (g.size()-1));
+	}
+
+	private void graphSelectMenu(Graph<Integer, DefaultEdge> graph, ArrayList<ArrayList<Integer>> g, int num) {
+		switch (num) {
+		case 1: {
+			diameterStandardDeviation(g);
+			break;
+		}
+		case 2: {
+			clusteringCoefficient(graph, g);
+			break;
+		}
+		case 3: {
+			printEdgeCount(g);
+			break;
+		}
+		case 0: {
+			System.out.println("System Quit...");
+		}
+		default: {
+			System.out.println("System Error");
+			break;
+		}
+		}
+	}
+
+	private void inputGraphData(ArrayList<ArrayList<Integer>> lists, String str, int idx) {
+		int v1 = Integer.parseInt(str.substring(0, str.indexOf(":") - 1));
+		int v2 = Integer.parseInt(str.substring(str.indexOf(":") + 2, str.length()));
+		if (v1 != idx) {
+			lists.get(v2).add(v1);
+		} else {
+			lists.get(v1).add(v2);
+		}
+	}
+
+	private ArrayList<ArrayList<Integer>> createAdjList(Graph<Integer, DefaultEdge> g) {
+		ArrayList<ArrayList<Integer>> lists = new ArrayList<ArrayList<Integer>>();
+		String s = null;
+		String str = null;
+		int idx = -1;
+
+		for (int i = 0; i <= g.vertexSet().size(); i++) {
+			lists.add(new ArrayList<Integer>()); // Graph의 크기만큼 graph (List)를 생성
+		}
+
+		for (int i = 1; i < lists.size(); i++) {
+			for (int j = 0; j < g.outgoingEdgesOf(i).size(); j++) {
+				s = (j == 0) ? (g.outgoingEdgesOf(i).toString()) : (s.substring(idx + 3, s.length()));
+				idx = s.indexOf(")");
+				str = (j == 0) ? s.substring(2, idx) : s.substring(1, idx);
+				inputGraphData(lists, str, i);
+			}
+		}
+
+		System.out.println(lists.size()); // 그래프의 사이즈를 체크
+
+		return lists;
+	}
+
+	private void mainProject() throws Exception {
+		ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+		File f = null;
+		String graphType = null;
+		String filePath = null;
+		int data = -1;
+		int compare = -1;
+		int n = -1;
+
+		while (true) {
+			filePath = "F:\\InfoLAB Seminar\\";
+			graphType = null;
+			data = -1;
+			compare = -1;
+			n = -1;
+			
+			while (graphType == null) {
+				graphType = printGraphTypeMenu();
+			}
+			
+			filePath += graphType;
+			while (!((data > 0) && (compare > 0))) {
+				System.out.println("filePath : " + filePath);
+				System.out.print("Data / Compare >> ");
+				data = numberException();
+				compare = numberException();
+			}
+
+			filePath += data + "_" + compare + " (1).txt";		// 임시 주소
+			f = new File(filePath);
+			
+			System.out.println(filePath);		
+			if (f.exists()) {	 // file checking 유무 검사
+				Graph<Integer, DefaultEdge> g = createGraph(filePath); // 그래프의 생성
+				graph = createAdjList(g);
+				bfs(graph);
+				
+				while (n != 0) {
+					while (n == -1) {
+						printMenu();
+						n = numberException();
+					}
+					graphSelectMenu(g, graph, n);
+					n = -1;
+				}
+				
+			} else {
+				System.out.println("File is not exist. Please try again");
+				System.out.println();
+			}
+			System.out.println("System Quit...");
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		GraphEvaluation ge = new GraphEvaluation();
+		ge.mainProject();
+	}
 }
