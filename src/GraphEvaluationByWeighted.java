@@ -1,12 +1,13 @@
 
 /*
- * Class Name : GraphEvaluation.java
+ * Class Name : GraphEvaluationByWeighted.java
  * 
- * Version Info : 1.0
+ * Version Info : InfoLAB_GE_220831
  * 
- * Date : 2022-08-26
+ * Date : 2022-08-31
  * 
- * Copyright : writersnow707
+ * Copyright : writersnow707@gmail.com
+ 	       writtensnow@naver.com
  */
 import java.io.BufferedReader;
 import java.io.File;
