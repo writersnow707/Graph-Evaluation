@@ -1,5 +1,5 @@
 /*
- * Class Name : GraphEvaluation.java
+F * Class Name : GraphEvaluation.java
  * 
  * Version Info : -
  * 
@@ -27,11 +27,11 @@ public class GraphEvaluation {
 
 	Scanner sc = null;
 
-	public GraphEvaluation() {
+	protected GraphEvaluation() {
 		sc = new Scanner(System.in);
 	}
 
-	private int numberException() {
+	protected int numberException() {
 		int num = -1;
 
 		try {
@@ -44,7 +44,7 @@ public class GraphEvaluation {
 		return num;
 	}
 	
-	public void printMenu() {
+	protected void printMenu() {
 		System.out.println("1. Display All Vertex Diameter Result");
 		System.out.println("2. Display Clustering Coefficient Result");
 		System.out.println("3. Display Expansion alpha(α) Result");
@@ -53,7 +53,7 @@ public class GraphEvaluation {
 	}
 
 	/* 그래프의 타입을 선택 후, 해당 타입 경로를 반환 */
-	private String printGraphTypeMenu() {
+	protected String printGraphTypeMenu() {
 		int n = -1;
 		while (n == -1) {
 			System.out.println("1. Random Graph");
@@ -65,13 +65,13 @@ public class GraphEvaluation {
 		}
 		switch (n) {
 		case 1: {
-			return "randomSet\\randomSet_";
+			return "\\randomSet";
 		}
 		case 2: {
-			return "chainRandomSet\\chainRandomSet_";
+			return "\\chainRandomSet";
 		}
 		case 3: {
-			return "ringRandomSet\\ringRandomSet_";
+			return "\\ringRandomSet";
 		}
 		default: {
 			System.out.println("System Error");
@@ -81,7 +81,7 @@ public class GraphEvaluation {
 	}
 
 	/* 그래프 생성 (그래프의 생성만을 목적으로 함) */
-	private Graph<Integer, DefaultEdge> createGraph(String filePath) throws Exception {
+	protected Graph<Integer, DefaultEdge> createGraph(String filePath, int data) throws Exception {
 		Graph<Integer, DefaultEdge> g = new SimpleGraph<>(DefaultEdge.class);
 		BufferedReader br = new BufferedReader(new FileReader(filePath));
 
@@ -129,10 +129,10 @@ public class GraphEvaluation {
 	}
 
 	// 임시 메서드 - bfs (그래프의 연결 유무 체크)
-	public void bfs(ArrayList<ArrayList<Integer>> g) {
+	protected void bfs(ArrayList<ArrayList <Vertex>> g) {
 		Queue<Integer> queue = new LinkedList<Integer>();
 		boolean[] isVisited = new boolean[g.size()];
-		int start = g.get(1).get(0);
+		int start = g.get(1).get(0).getIdx();
 		int count = 0;
 		int graphCount = 0;
 
@@ -146,7 +146,7 @@ public class GraphEvaluation {
 				int v = queue.poll();
 
 				for (int i = 0; i < g.get(v).size(); i++) {
-					int thisV = g.get(v).get(i);
+					int thisV = g.get(v).get(i).getIdx();
 					if (!isVisited[thisV]) {
 						queue.add(thisV);
 						// System.out.print(thisV + " ");
@@ -169,7 +169,7 @@ public class GraphEvaluation {
 		}
 	}
 	
-	private int diameter(ArrayList<ArrayList<Integer>> g, int start) {
+	protected int diameter(ArrayList<ArrayList <Vertex>> g, int start) {
 		int[] d = new int[g.size()];
 		Arrays.fill(d, INF);
 
@@ -182,7 +182,7 @@ public class GraphEvaluation {
 		while (!pq.isEmpty()) {
 			Vertex next = pq.poll();
 
-			int dist = next.getCost(); // 현재 노드까지의 비용
+			double dist = next.getCost(); // 현재 노드까지의 비용
 			int now = next.getIdx(); // 현재 노드 번호
 
 			if (d[now] < dist) {
@@ -193,9 +193,9 @@ public class GraphEvaluation {
 				// int cost = d[now] + graph.get(now).get(i).getCost();
 				int cost = d[now] + 1;
 
-				if (cost < d[g.get(now).get(i)]) {
-					d[g.get(now).get(i)] = cost;
-					pq.offer(new Vertex(g.get(now).get(i), cost));
+				if (cost < d[g.get(now).get(i).getIdx()]) {
+					d[g.get(now).get(i).getIdx()] = cost;
+					pq.offer(new Vertex(g.get(now).get(i).getIdx(), cost));
 				}
 			}
 		}
@@ -206,18 +206,16 @@ public class GraphEvaluation {
 	}
 	
 	// 1번 메뉴 : Diameter Standard Deviation 결과값 도출
-	private void diameterStandardDeviation(ArrayList<ArrayList<Integer>> g) {
-		int[] avgDiameter = new int[g.size()];
+	protected void diameterStandardDeviation(ArrayList<ArrayList <Vertex>> g) {
+		double[] avgDiameter = new double[g.size()];
 		double sum = 0.00;
 		double avgSum = 0.00;
 		double avgDeviation = 0.00;
-		int idx = 1;
 		System.out.println("Now Loading...");
 
 		for (int i = 1; i <= g.size()-1; i++) {
 			avgDiameter[i] = diameter(g, i);
 			sum += (double) avgDiameter[i];
-			// System.out.println(diameter(g, i));
 		}
 
 		System.out.println("**Diameter resolved***");
@@ -238,10 +236,9 @@ public class GraphEvaluation {
 	}
 	
 	/* 2번 메뉴 : Clustering Coefficient 결과값 도출 */
-	private void clusteringCoefficient(Graph<Integer, DefaultEdge> graph, ArrayList<ArrayList<Integer>> g) {
-		double[] clusteringCoef = new double[g.size()];
-		int degree = -1;
+	protected void clusteringCoefficient(Graph<Integer, DefaultEdge> graph, ArrayList<ArrayList<Vertex>> g) {
 		double sum = 0.0;
+		int degree = -1;
 		int v1 = -1;
 		int v2 = -1;
 		int ei = -1;
@@ -251,29 +248,27 @@ public class GraphEvaluation {
 			degree = g.get(i).size();
 			ei = 0;
 
-			if (degree == 1) {
-				clusteringCoef[i] = 0.0;
-			} else {
+			if (degree != 1) {
 				for (int j = 0; j < degree; j++) {
 					for (int k = j+1; k < degree; k++) {
-						v1 = g.get(i).get(j);
-						v2 = g.get(i).get(k);
+						v1 = g.get(i).get(j).getIdx();
+						v2 = g.get(i).get(k).getIdx();
 
 						if (graph.containsEdge(v1, v2)) {
 							ei++;
 						}
 					}
 				}
-				clusteringCoef[i] = (double)(2*ei / (degree*(degree-1)));
+				sum += (double)(2*ei) / (degree*(degree-1));
 			}
 		}
 
-		System.out.print("AVERAGE : " + sum / (g.size()-1) + " ");
+		System.out.print("AVERAGE : " + (double)(sum / (g.size()-1)) + " ");
 		System.out.println("(" + sum + " / " + (g.size()-1) + ")");
 		System.out.println();
 	}
 	
-	public int edgeCut(ArrayList<ArrayList <Integer>> g, int start, int level) {
+	protected int edgeCut(ArrayList<ArrayList <Vertex>> g, int start, int level) {
 		boolean[] isVisit = new boolean[g.size()];
 		int i, j, k;
 		int count = 0;
@@ -285,13 +280,13 @@ public class GraphEvaluation {
 		int thisV = -1;
 		boolean isFound = false;
 
-		ArrayList<ArrayList<Integer>> lists = new ArrayList<ArrayList<Integer>>();
+		ArrayList<ArrayList <Integer>> lists = new ArrayList<>();
 
 		for (i = 0; i <= g.size()-1; i++) {
 			lists.add(new ArrayList<Integer>());
 		}
 
-		Queue<Integer> queue = new LinkedList<Integer>();
+		Queue<Integer> queue = new LinkedList<>();
 
 		queue.add(start);
 		isVisit[start] = true;
@@ -304,7 +299,7 @@ public class GraphEvaluation {
 			while (count != 0) {
 				v = queue.poll();
 				for (j = 0; j < g.get(v).size(); j++) {
-					thisV = g.get(v).get(j);
+					thisV = g.get(v).get(j).getIdx();
 					if (!isVisit[thisV]) {
 						lists.get(v).add(thisV);
 						lists.get(thisV).add(v);
@@ -335,7 +330,7 @@ public class GraphEvaluation {
 		while (!queue.isEmpty()) {
 			v = queue.poll();
 			for (j = 0; j < g.get(v).size(); j++) {
-				thisV = g.get(v).get(j);
+				thisV = g.get(v).get(j).getIdx();
 				if (lists.get(thisV).get(0) == 0) {
 					isFound = false;
 					for (k = 0; k < lists.get(thisV).size(); k++) {
@@ -354,23 +349,23 @@ public class GraphEvaluation {
 			edgeCutCount += (allEdges - cutEdges);
 		}
 		
-		System.out.println();
 		lists.clear();
 		return edgeCutCount;
 	}
 
 	/* hop의 level 만큼 노드를 부분 그래프로 분리하기 위해 제거해야 하는 Edge Count 반환*/
-	public void printEdgeCount(ArrayList<ArrayList <Integer>> g) {
+	protected void printEdgeCount(ArrayList<ArrayList <Vertex>> g) {
 		int cutCount = 0;
 		int level = 2;
 		
 		for (int j = 1; j <= g.size()-1; j++) {
 			cutCount += edgeCut(g, j, level);
 		}
+		System.out.println();
 		System.out.println((double) cutCount / (g.size()-1));
 	}
 
-	private void graphSelectMenu(Graph<Integer, DefaultEdge> graph, ArrayList<ArrayList<Integer>> g, int num) {
+	protected void graphSelectMenu(Graph<Integer, DefaultEdge> graph, ArrayList<ArrayList <Vertex>> g, int num) {
 		switch (num) {
 		case 1: {
 			diameterStandardDeviation(g);
@@ -394,24 +389,24 @@ public class GraphEvaluation {
 		}
 	}
 
-	private void inputGraphData(ArrayList<ArrayList<Integer>> lists, String str, int idx) {
+	protected void inputGraphData(ArrayList <ArrayList<Vertex>> lists, String str, int idx) {
 		int v1 = Integer.parseInt(str.substring(0, str.indexOf(":") - 1));
 		int v2 = Integer.parseInt(str.substring(str.indexOf(":") + 2, str.length()));
 		if (v1 != idx) {
-			lists.get(v2).add(v1);
+			lists.get(v2).add(new Vertex(v1, 0));
 		} else {
-			lists.get(v1).add(v2);
+			lists.get(v1).add(new Vertex(v2, 0));
 		}
 	}
 
-	private ArrayList<ArrayList<Integer>> createAdjList(Graph<Integer, DefaultEdge> g) {
-		ArrayList<ArrayList<Integer>> lists = new ArrayList<ArrayList<Integer>>();
+	protected ArrayList<ArrayList <Vertex>> createAdjList(Graph<Integer, DefaultEdge> g) {
+		ArrayList<ArrayList <Vertex>> lists = new ArrayList<>();
 		String s = null;
 		String str = null;
 		int idx = -1;
 
 		for (int i = 0; i <= g.vertexSet().size(); i++) {
-			lists.add(new ArrayList<Integer>()); // Graph의 크기만큼 graph (List)를 생성
+			lists.add(new ArrayList <Vertex>()); // Graph의 크기만큼 graph (List)를 생성
 		}
 
 		for (int i = 1; i < lists.size(); i++) {
@@ -427,9 +422,9 @@ public class GraphEvaluation {
 
 		return lists;
 	}
-
-	private void mainProject() throws Exception {
-		ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
+	
+	public void mainProject() throws Exception {
+		ArrayList<ArrayList <Vertex>> graph = new ArrayList<>();
 		File f = null;
 		String graphType = null;
 		String filePath = null;
@@ -438,7 +433,7 @@ public class GraphEvaluation {
 		int n = -1;
 
 		while (true) {
-			filePath = "F:\\InfoLAB Seminar\\";
+			filePath = "F:\\InfoLAB Seminar";
 			graphType = null;
 			data = -1;
 			compare = -1;
@@ -448,7 +443,7 @@ public class GraphEvaluation {
 				graphType = printGraphTypeMenu();
 			}
 			
-			filePath += graphType;
+			filePath += graphType + graphType + "_";
 			while (!((data > 0) && (compare > 0))) {
 				System.out.println("filePath : " + filePath);
 				System.out.print("Data / Compare >> ");
@@ -461,9 +456,10 @@ public class GraphEvaluation {
 			
 			System.out.println(filePath);		
 			if (f.exists()) {	 // file checking 유무 검사
-				Graph<Integer, DefaultEdge> g = createGraph(filePath); // 그래프의 생성
+				// weight = createGraphWeight();
+				Graph<Integer, DefaultEdge> g = createGraph(filePath, data); // 그래프의 생성
 				graph = createAdjList(g);
-				bfs(graph);
+				// bfs(graph);
 				
 				while (n != 0) {
 					while (n == -1) {
