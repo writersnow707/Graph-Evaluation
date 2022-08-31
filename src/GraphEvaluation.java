@@ -1,12 +1,12 @@
 /*
-F * Class Name : GraphEvaluation.java
+ * Class Name : GraphEvaluation.java
  * 
- * Version Info : -
+ * Version Info : InfoLAB_GE_220831
  * 
- * Date : 2022-08-17
+ * Date : 2022-08-31
  * 
  * Copyright : writersnow707
- */
+*/
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
